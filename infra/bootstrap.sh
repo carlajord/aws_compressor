@@ -20,7 +20,7 @@ BUCKET="${1:?Usage: bootstrap.sh <BUCKET> <REGION>}"
 REGION="${2:?}"
 
 APP_DIR="/home/ec2-user/aws_compressor"
-REPO_URL="https://github.com/csantiago3/aws_compressor.git"
+REPO_URL="https://github.com/carlajord/aws_compressor.git"
 
 echo "=== 1/6 System packages ==="
 sudo dnf install -y git python3.11 python3.11-pip gcc python3.11-devel

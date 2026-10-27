@@ -22,3 +22,10 @@ dist/
 
 # Eval results (generated)
 evals/results/
+
+.claude/
+*.pem
+
+
+
+
