@@ -25,6 +25,7 @@ evals/results/
 
 .claude/
 *.pem
+aws_app_launch.md
 
 
 

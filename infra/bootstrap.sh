@@ -27,7 +27,7 @@ sudo dnf install -y git python3.11 python3.11-pip gcc python3.11-devel
 
 echo "=== 2/6 Install uv ==="
 curl -LsSf https://astral.sh/uv/install.sh | sh
-source "$HOME/.local/bin/env"
+export PATH="$HOME/.local/bin:$PATH"
 
 echo "=== 3/6 Clone repo ==="
 if [ -d "$APP_DIR" ]; then

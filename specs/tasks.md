@@ -78,14 +78,14 @@ explains them, and waits (see CLAUDE.md). Claude Code stops for review after eac
 - [x] **T7.3** Write `infra/iam-ec2-policy.json` (least privilege, bucket name placeholder).
   ▶ USER: create role `oid-ec2-role` with that policy + `AmazonSSMManagedInstanceCore`
   (console steps or CLI, explained).
-- [ ] **T7.4** Write `infra/bootstrap.sh` and `infra/streamlit.service`.
+- [x] **T7.4** Write `infra/bootstrap.sh` and `infra/streamlit.service`.
   ▶ USER: launch EC2 (t3.medium, AL2023, 20 GB, role attached, SG port 8501 from My IP),
   connect via Session Manager, run bootstrap, run pipeline in aws mode, enable the service.
-- [ ] **T7.5** ▶ USER: open `http://<ec2-public-ip>:8501`, run a chat question and the eval suite
+- [x] **T7.5** ▶ USER: open `http://<ec2-public-ip>:8501`, run a chat question and the eval suite
   from EC2; confirm traces and eval JSON appear (and eval upload to S3).
 
 ## Phase 8 — Wrap-up
-- [ ] **T8.1** README: architecture diagram, how to run locally/on AWS, screenshots, eval results,
+- [x] **T8.1** README: architecture diagram, how to run locally/on AWS, screenshots, eval results,
   cost notes, what I'd do next (CDK, containers, auth, scheduling).
 - [ ] **T8.2** ▶ USER: stop EC2 when idle; at project end terminate EC2, empty/delete bucket,
   delete IAM user access key, verify billing.
