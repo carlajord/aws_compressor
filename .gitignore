@@ -1,0 +1,24 @@
+# Data and databases
+data/
+*.duckdb
+*.duckdb.wal
+
+# Environment
+.env
+.venv/
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+
+# Build
+dist/
+*.egg-info/
+
+# OS
+.DS_Store
+
+# Eval results (generated)
+evals/results/
