@@ -1,0 +1,180 @@
+# Tag mapping: logical name → CDF external_id
+# Generated from data_contract.md §2 during T1.2.
+# Code uses logical names only; this file drives extraction and DB loading.
+
+# Core compressor performance
+p_suction_barg:
+  external_id: "VAL_23-PT-92532:X.Value"
+  description: "Compressor suction pressure"
+  unit: "barg"
+  equipment: "23-KA-9101"
+
+p_discharge_barg:
+  external_id: "VAL_23_PT_92537:Z.X.Value"
+  description: "Compressor discharge pressure"
+  unit: "barg"
+  equipment: "23-KA-9101"
+
+t_suction_c:
+  external_id: "VAL_23_TT_92532:Z.X.Value"
+  description: "Compressor suction temperature"
+  unit: "degC"
+  equipment: "23-KA-9101"
+
+t_discharge_c:
+  external_id: "VAL_23_TT_92536:Z.X.Value"
+  description: "Compressor discharge temperature"
+  unit: "degC"
+  equipment: "23-KA-9101"
+
+flow_gas:
+  external_id: "VAL_23_FT_92537_03:Z.X.Value"
+  description: "Gas flow through compressor"
+  unit: "as_in_cdf"
+  equipment: "23-KA-9101"
+
+# Motor & running proxy
+motor_current_a:
+  external_id: "VAL_23-KA-9101-M01_Current_L1:VALUE"
+  description: "Motor current L1 (running proxy)"
+  unit: "A"
+  equipment: "23-KA-9101 motor"
+
+motor_power_kw:
+  external_id: "VAL_23-KA-9101-M01_Active_power_kW:VALUE"
+  description: "Motor active power"
+  unit: "kW"
+  equipment: "23-KA-9101 motor"
+
+# Valves
+asv_open_pct:
+  external_id: "VAL_23_ZT_92543:Z.X.Value"
+  description: "Anti-surge valve position"
+  unit: "%"
+  equipment: "23-FV-92543"
+
+stv_open_pct:
+  external_id: "VAL_23_ZT_92538:Z.X.Value"
+  description: "Suction throttle valve position"
+  unit: "%"
+  equipment: "23-PV-92538"
+
+# Suction cooler (23-HA-9103)
+t_gas_in_sc_c:
+  external_id: "VAL_23-TT-92512:X.Value"
+  description: "Gas temperature into suction cooler"
+  unit: "degC"
+  equipment: "23-HA-9103"
+
+t_gas_out_sc_c:
+  external_id: "VAL_23-TIC-92504:Z.X.Value"
+  description: "Gas temperature out of suction cooler"
+  unit: "degC"
+  equipment: "23-HA-9103"
+
+t_cm_in_c:
+  external_id: "VAL_45-TT-92506:X.Value"
+  description: "Cooling medium inlet temperature"
+  unit: "degC"
+  equipment: "23-HA-9103"
+
+t_cm_out_c:
+  external_id: "VAL_45-TT-92508:X.Value"
+  description: "Cooling medium outlet temperature"
+  unit: "degC"
+  equipment: "23-HA-9103"
+
+q_cm_m3h:
+  external_id: "VAL_45-FT-92506:X.Value"
+  description: "Cooling medium flow"
+  unit: "m3/h"
+  equipment: "23-HA-9103"
+
+# Scrubber
+scrubber_level_pct:
+  external_id: "VAL_23-LIC-92521:Z.X.Value"
+  description: "Suction scrubber level"
+  unit: "%"
+  equipment: "23-VG-9101"
+
+# Vibration (CMS — motor journal bearings)
+vib_mtr_de_1:
+  external_id: "VAL_23_YT_96134_01:Z.X.Value"
+  description: "Motor journal BRG DE probe 1"
+  unit: "as_in_cdf"
+  equipment: "23-KA-9101 motor"
+
+vib_mtr_de_2:
+  external_id: "VAL_23_YT_96134_02:Z.X.Value"
+  description: "Motor journal BRG DE probe 2"
+  unit: "as_in_cdf"
+  equipment: "23-KA-9101 motor"
+
+vib_mtr_nde_1:
+  external_id: "VAL_23_YT_96133_01:Z.X.Value"
+  description: "Motor journal BRG NDE probe 1"
+  unit: "as_in_cdf"
+  equipment: "23-KA-9101 motor"
+
+vib_mtr_nde_2:
+  external_id: "VAL_23_YT_96133_02:Z.X.Value"
+  description: "Motor journal BRG NDE probe 2"
+  unit: "as_in_cdf"
+  equipment: "23-KA-9101 motor"
+
+# Bearing temperatures (CMS — compressor + motor journal bearings)
+t_bearing_comp_de:
+  external_id: "VAL_23_TT_96101_01:Z.X.Value"
+  description: "Compressor journal BRG DE"
+  unit: "degC"
+  equipment: "23-KA-9101"
+
+t_bearing_comp_nde:
+  external_id: "VAL_23_TT_96102_01:Z.X.Value"
+  description: "Compressor journal BRG NDE"
+  unit: "degC"
+  equipment: "23-KA-9101"
+
+t_bearing_mtr_de:
+  external_id: "VAL_23_TT_96132_02:Z.X.Value"
+  description: "Motor journal BRG DE"
+  unit: "degC"
+  equipment: "23-KA-9101 motor"
+
+t_bearing_mtr_nde:
+  external_id: "VAL_23_TT_96131_02:Z.X.Value"
+  description: "Motor journal BRG NDE"
+  unit: "degC"
+  equipment: "23-KA-9101 motor"
+
+# Lube oil system
+lube_oil_t_c:
+  external_id: "VAL_23-TT-96183:X.Value"
+  description: "Lube oil reservoir temperature"
+  unit: "degC"
+  equipment: "lube system"
+
+lube_filter_dp:
+  external_id: "VAL_23-PDT-96180:X.Value"
+  description: "Lube oil filter differential pressure"
+  unit: "as_in_cdf"
+  equipment: "lube system"
+
+# Bonus tags (CBM-derived, for cross-checks and KPIs)
+pressure_ratio_cbm:
+  external_id: "VAL_23-KA-9101_APR:VALUE"
+  description: "CBM actual pressure ratio"
+  unit: "ratio"
+  equipment: "23-KA-9101"
+
+shaft_power_kw:
+  external_id: "VAL_23-KA-9101_ASP:VALUE"
+  description: "CBM actual shaft power"
+  unit: "kW"
+  equipment: "23-KA-9101"
+
+running_hours:
+  external_id: "VAL_23-KA-9101-M01_Running_hours:VALUE"
+  description: "Cumulative running hours"
+  unit: "hours"
+  equipment: "23-KA-9101 motor"
