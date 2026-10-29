@@ -62,8 +62,22 @@ def get_schema(conn: duckdb.DuckDBPyConnection, table: str | None = None) -> dic
             "WHERE table_schema = 'main' "
             "ORDER BY table_type, table_name"
         ).fetchall()
+
+        col_rows = conn.execute(
+            "SELECT table_name, column_name "
+            "FROM information_schema.columns "
+            "WHERE table_schema = 'main' "
+            "ORDER BY table_name, ordinal_position"
+        ).fetchall()
+        cols_by_table: dict[str, list[str]] = {}
+        for tbl, col in col_rows:
+            cols_by_table.setdefault(tbl, []).append(col)
+
         return {
-            "tables": [{"name": r[0], "type": r[1]} for r in rows],
+            "tables": [
+                {"name": r[0], "type": r[1], "columns": cols_by_table.get(r[0], [])}
+                for r in rows
+            ],
         }
 
     table_clean = table.strip().replace("'", "").replace(";", "")

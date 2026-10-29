@@ -69,7 +69,7 @@ uv run python -m oidpipe.pipeline --aws
 echo ""
 echo "=== Bootstrap complete ==="
 echo "Dashboards are ready. To start Streamlit:"
-echo "  cd $APP_DIR && uv run streamlit run app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0"
+echo "  cd $APP_DIR && uv run streamlit run app/Home.py --server.port 8501 --server.address 0.0.0.0"
 echo ""
 echo "To install as a service:"
 echo "  sudo cp infra/streamlit.service /etc/systemd/system/"

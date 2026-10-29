@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import streamlit as st
+import pandas as pd
 import plotly.graph_objects as go
-
-from db import get_conn, date_range_slider, get_offline_periods, add_offline_shading
+import streamlit as st
+from db import add_offline_shading, date_range_slider, get_conn, get_offline_periods
+from plotly.subplots import make_subplots
 
 st.set_page_config(page_title="Anomalies — OID Compressor", layout="wide")
 st.title("Anomalies")
@@ -218,3 +219,114 @@ else:
         st.dataframe(near, hide_index=True, use_container_width=True)
     else:
         st.info("No anomaly windows for this signal overlap with events (±7 days).")
+
+# ── Shutdown drill-down ────────────────────────────────────────────────
+st.subheader("Shutdown drill-down")
+st.caption(
+    "Raw signals ±3 days around each significant offline period (≥1 h), "
+    "with anomaly markers overlaid. Reveals whether detectors flagged "
+    "anything *before* the machine went offline."
+)
+
+shutdowns = conn.execute("""
+    WITH numbered AS (
+        SELECT ts,
+               ts - INTERVAL 10 MINUTE * row_number() OVER (ORDER BY ts) AS grp
+        FROM features_10m
+        WHERE NOT is_running
+    )
+    SELECT min(ts) AS start_ts, max(ts) AS end_ts, count(*) AS n_points,
+           EXTRACT(EPOCH FROM max(ts) - min(ts)) / 3600 AS duration_hrs
+    FROM numbered
+    GROUP BY grp
+    HAVING count(*) >= 6
+    ORDER BY start_ts
+""").fetchdf()
+
+if len(shutdowns) == 0:
+    st.info("No offline periods ≥ 1 h found in the data.")
+else:
+    options = [
+        f"Shutdown {i + 1}: {row['start_ts'].strftime('%Y-%m-%d %H:%M')} "
+        f"({row['duration_hrs']:.0f}h offline)"
+        for i, row in shutdowns.iterrows()
+    ]
+    chosen_idx = st.selectbox(
+        "Select a shutdown period", range(len(options)), format_func=lambda i: options[i]
+    )
+
+    sd = shutdowns.iloc[chosen_idx]
+    context_days = 3
+    window_start = sd["start_ts"] - pd.Timedelta(days=context_days)
+    window_end = sd["end_ts"] + pd.Timedelta(days=context_days)
+
+    feat = conn.execute("""
+        SELECT ts, vib_mtr_de_1, vib_mtr_de_2, vib_mtr_nde_1, vib_mtr_nde_2,
+               t_bearing_comp_de, t_bearing_comp_nde, t_bearing_mtr_de, t_bearing_mtr_nde,
+               pressure_ratio, is_running
+        FROM features_10m
+        WHERE ts BETWEEN ? AND ?
+        ORDER BY ts
+    """, [window_start, window_end]).fetchdf()
+
+    anoms = conn.execute("""
+        SELECT ts, signal, method, score
+        FROM anomalies
+        WHERE is_anomaly AND ts BETWEEN ? AND ?
+    """, [window_start, window_end]).fetchdf()
+
+    fig_drill = make_subplots(
+        rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.06,
+        subplot_titles=["Vibration", "Bearing temps", "Pressure ratio + flags"],
+    )
+
+    for sig in ["vib_mtr_de_1", "vib_mtr_de_2", "vib_mtr_nde_1", "vib_mtr_nde_2"]:
+        if sig in feat.columns:
+            fig_drill.add_trace(
+                go.Scatter(x=feat["ts"], y=feat[sig], name=sig, line=dict(width=1)),
+                row=1, col=1,
+            )
+
+    for sig in ["t_bearing_comp_de", "t_bearing_comp_nde", "t_bearing_mtr_de", "t_bearing_mtr_nde"]:
+        if sig in feat.columns:
+            fig_drill.add_trace(
+                go.Scatter(x=feat["ts"], y=feat[sig], name=sig, line=dict(width=1)),
+                row=2, col=1,
+            )
+
+    fig_drill.add_trace(
+        go.Scatter(
+            x=feat["ts"], y=feat["pressure_ratio"],
+            name="pressure_ratio", line=dict(width=1, color="#4c78a8"),
+        ),
+        row=3, col=1,
+    )
+
+    pr_min = feat["pressure_ratio"].min() if len(feat) > 0 else 0
+    for method, color, symbol in [("zscore", "#e45756", "triangle-up"),
+                                   ("iforest", "#f58518", "diamond")]:
+        subset = anoms[anoms["method"] == method]
+        if len(subset) > 0:
+            fig_drill.add_trace(
+                go.Scatter(
+                    x=subset["ts"], y=[pr_min] * len(subset), mode="markers",
+                    marker=dict(symbol=symbol, size=8, color=color),
+                    name=f"{method} flag",
+                ),
+                row=3, col=1,
+            )
+
+    fig_drill.add_vrect(
+        x0=sd["start_ts"], x1=sd["end_ts"],
+        fillcolor="grey", opacity=0.25, line_width=0,
+    )
+
+    n_zs = len(anoms[anoms["method"] == "zscore"])
+    n_if = len(anoms[anoms["method"] == "iforest"])
+    st.caption(f"{n_zs} zscore / {n_if} iforest flags in ±{context_days}d window")
+
+    fig_drill.update_layout(
+        height=700, margin=dict(t=30, b=30),
+        legend=dict(orientation="h", y=-0.05),
+    )
+    st.plotly_chart(fig_drill, use_container_width=True)

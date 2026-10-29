@@ -16,4 +16,4 @@ pipeline-local:
 	uv run python -m oidpipe.pipeline --local
 
 app:
-	uv run streamlit run app/streamlit_app.py --server.port 8501
+	uv run streamlit run app/Home.py --server.port 8501

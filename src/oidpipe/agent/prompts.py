@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import json
-
 import duckdb
 
 from oidpipe.agent.tools import TOOL_DESCRIPTIONS, get_schema
@@ -126,6 +124,7 @@ def build_system_prompt(conn: duckdb.DuckDBPyConnection) -> str:
         "7. When answering, cite the data. Show key numbers from the query result.",
         "8. If you are unsure which table or column to use, call get_schema first.",
         "9. Use standard SQL operators: >= not ≥, <= not ≤, != not ≠. The database is DuckDB.",
+        "10. The full database schema with columns is already provided above. Only call get_schema if you need sample rows for a specific table.",
         "",
         _format_tool_docs(),
         _format_schema(conn),

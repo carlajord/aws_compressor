@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=ec2-user
 WorkingDirectory=/home/ec2-user/aws_compressor
-ExecStart=/home/ec2-user/.local/bin/uv run streamlit run app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true
+ExecStart=/home/ec2-user/.local/bin/uv run streamlit run app/Home.py --server.port 8501 --server.address 0.0.0.0 --server.headless true
 Restart=on-failure
 RestartSec=5
 Environment=HOME=/home/ec2-user

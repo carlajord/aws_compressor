@@ -20,7 +20,8 @@ logger = logging.getLogger(__name__)
 
 _REASONING_PATTERNS = re.compile(
     r"(?:we need to|let's|let me|i should|i need to|i'll|i will|use get_schema|use run_sql|"
-    r"call get_schema|call run_sql|query the|check the)",
+    r"call get_schema|call run_sql|query the|check the|need to run|need to query|"
+    r"need to check|to answer|first,?\s+i|step \d)",
     re.IGNORECASE,
 )
 
@@ -51,6 +52,7 @@ class AgentResult:
 def _parse_tool_call(text: str) -> tuple[dict | None, str]:
     """Extract a <tool_call> JSON from text using raw_decode for robust parsing."""
     marker = "<tool_call>"
+    end_marker = "</tool_call>"
     idx = text.find(marker)
     if idx == -1:
         return None, text
@@ -61,13 +63,24 @@ def _parse_tool_call(text: str) -> tuple[dict | None, str]:
     try:
         decoder = json.JSONDecoder()
         payload, _ = decoder.raw_decode(text, json_start)
+        if isinstance(payload, dict) and "name" in payload:
+            return payload, remaining
     except (json.JSONDecodeError, ValueError):
-        return None, text
+        pass
 
-    if not isinstance(payload, dict) or "name" not in payload:
-        return None, text
+    end_idx = text.find(end_marker, json_start)
+    raw_json = text[json_start:end_idx].strip() if end_idx != -1 else text[json_start:].strip()
+    raw_json = raw_json.rstrip("'\"` \n\t")
 
-    return payload, remaining
+    for candidate in [raw_json, raw_json.replace("\n", "\\n")]:
+        try:
+            payload = json.loads(candidate)
+            if isinstance(payload, dict) and "name" in payload:
+                return payload, remaining
+        except json.JSONDecodeError:
+            continue
+
+    return None, text
 
 
 def _tool_from_reasoning(reasoning: str) -> str:
@@ -195,6 +208,7 @@ def ask(
     total_in = 0
     total_out = 0
     has_tool_results = False
+    last_tool_key: str | None = None
     use_bedrock = client is None
 
     def _call_llm(msgs: list[dict]) -> tuple[str, int, int, str | None]:
@@ -255,9 +269,20 @@ def ask(
         tool_call, remaining_text = _parse_tool_call(text)
 
         if tool_call is not None:
-            # Valid tool call — dispatch it
             tool_name = tool_call.get("name", "")
             tool_args = tool_call.get("arguments", {})
+            tool_key = f"{tool_name}:{json.dumps(tool_args, sort_keys=True)}"
+            if tool_key == last_tool_key:
+                logger.info("Duplicate tool call %s, nudging", tool_name)
+                messages.append({"role": "assistant", "content": text})
+                messages.append({"role": "user", "content": (
+                    "You already called this tool with the same arguments and "
+                    "got a result above. Use that result to write a SQL query "
+                    "or answer the question directly. Do NOT call the same "
+                    "tool again.\n" + _NUDGE
+                )})
+                continue
+            last_tool_key = tool_key
 
             if tool_name == "run_sql":
                 sql_list.append(tool_args.get("sql", ""))

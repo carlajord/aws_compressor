@@ -6,6 +6,86 @@ built with data from [Cognite Open Industrial Data](https://openindustrialdata.c
 Sensor data flows from Cognite OID through feature engineering and anomaly detection
 into a Streamlit app with interactive dashboards and a text-to-SQL agent.
 
+## What this app does
+
+### Automated anomaly detection
+
+The pipeline ingests 10-minute averaged sensor data (pressures, temperatures,
+vibrations, valve positions, motor current) and runs two complementary detection
+methods:
+
+- **Rolling z-score** — flags individual signals that deviate significantly from
+  their 24-hour rolling baseline, computed only during running periods so shutdowns
+  don't trigger false alarms.
+- **Isolation Forest** — a multivariate ML model trained on a configurable "normal"
+  operating window, looking at vibration, bearing temperatures, pressure ratio, and
+  cooler approach temperature together. It catches subtle multi-signal patterns that
+  per-tag z-scores would miss.
+
+Flagged points are grouped into anomaly windows (consecutive flags merged when
+the gap is ≤ 30 min) and cross-referenced against maintenance events within ±7 days,
+so you can see whether an anomaly preceded or followed a known intervention.
+
+### Interactive dashboards
+
+A Streamlit web app with four views:
+
+- **Home** — KPIs (running hours, average pressure ratio, anomaly count) and
+  time-series plots with a date filter.
+- **Anomalies** — signals overlaid with anomaly markers (z-score and Isolation Forest),
+  a timeline of anomaly windows, nearby maintenance events, and a shutdown drill-down
+  that shows vibration, bearing temps, and pressure ratio ±3 days around each
+  significant offline period — revealing whether detectors flagged anything *before*
+  the machine went offline.
+- **Cooler Performance** — suction cooler duty (kW), approach temperature
+  (gas outlet minus cooling-medium inlet), and gas ΔT across the cooler, each plotted
+  with an optional 30-day rolling trend and z-score anomaly flags. A rising approach
+  temperature may indicate fouling; a dropping gas ΔT may indicate reduced cooling
+  effectiveness. The user interprets the trends visually — the app does not compute
+  an explicit fouling indicator.
+- **Chat** — a natural-language interface (see below).
+
+### Text-to-SQL agent
+
+You type a question in plain English — *"What was the average pressure ratio on days
+when the anti-surge valve was recycling?"* — and an LLM translates it into SQL, runs
+it against the database (read-only, SELECT only), and returns the answer with the
+query shown. The agent knows the compressor glossary, units, and schema, so it
+understands domain terms like "ASV", "barg", and "suction scrubber".
+
+### Events
+
+The events shown in the app are maintenance and process events pulled from
+Cognite Data Fusion's Events API for the compressor asset subtree (23-KA-9101,
+23-HA-9103, 23-VG-9101, and related valves). They are **not** computed by the app —
+they come directly from the source system with their original `type`, `subtype`,
+and `description` fields. The app correlates these events with detected anomaly
+windows to help identify whether unusual sensor behavior aligns with known
+maintenance or process activity.
+
+## Why a production engineer should care
+
+**Early warning.** Compressor trips and unplanned shutdowns are expensive — lost
+production, flaring, cascade effects on downstream separation. This tool flags
+developing problems (bearing degradation, fouling coolers, surge events) before they
+escalate, using the same sensor data already available from the control system.
+
+**Cooler health tracking.** The cooler performance page monitors heat duty and
+approach temperature over time. A rising approach temp is a classic early indicator
+of fouling — catching it early means scheduling cleaning during a planned turnaround
+instead of dealing with an emergency shutdown.
+
+**Post-event investigation.** After an event (trip, high-vibration alarm, surge),
+the anomaly timeline cross-referenced with maintenance records helps trace what
+happened and when, without manually pulling historian trends. The shutdown drill-down
+shows whether anomaly detectors flagged anything in the days leading up to an
+offline period.
+
+**Operational context without writing SQL.** Production engineers know the plant but
+shouldn't need to write database queries. The chat agent lets you ask questions like
+*"Show me the top 5 longest anomaly windows"* or *"What was discharge pressure doing
+the week before the last maintenance event?"* and get answers in seconds.
+
 ## Architecture
 
 ```
@@ -56,7 +136,7 @@ src/oidpipe/
   pipeline.py            CLI: local or S3 mode
 
 app/
-  streamlit_app.py       Home page (KPIs, daily charts)
+  Home.py       Home page (KPIs, daily charts)
   db.py                  Shared DuckDB connection, chart helpers
   pages/                 Anomalies, Cooler Performance, Chat, Traces
 
@@ -86,7 +166,7 @@ cp .env.example .env
 uv run python -m oidpipe.pipeline --local
 
 # 4. Start the app
-uv run streamlit run app/streamlit_app.py --server.port 8501
+uv run streamlit run app/Home.py --server.port 8501
 
 # 5. Run tests
 uv run pytest
@@ -106,7 +186,7 @@ bash bootstrap.sh <YOUR_BUCKET> <REGION>
 
 # 4. Start Streamlit
 cd ~/aws_compressor
-uv run streamlit run app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+uv run streamlit run app/Home.py --server.port 8501 --server.address 0.0.0.0
 
 # 5. (Optional) Install as a systemd service
 sudo cp infra/streamlit.service /etc/systemd/system/
@@ -138,7 +218,7 @@ nano ~/aws_compressor/.env
 # 5. Start Streamlit
 cd ~/aws_compressor
 export PATH="$HOME/.local/bin:$PATH"
-uv run streamlit run app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true
+uv run streamlit run app/Home.py --server.port 8501 --server.address 0.0.0.0 --server.headless true
 
 # 6. Open http://<NEW_PUBLIC_IP>:8501
 ```

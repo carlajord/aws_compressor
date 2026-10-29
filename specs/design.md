@@ -57,7 +57,7 @@ src/oidpipe/
 │   └── tracing.py       # Tracer, span context manager → traces.duckdb
 └── pipeline.py          # CLI: python -m oidpipe.pipeline [--local]
 app/
-├── streamlit_app.py     # entry / Overview
+├── Home.py              # entry / Overview
 └── pages/ 1_Anomalies.py, 2_Cooler_Performance.py, 3_Chat.py, 4_Traces_and_Evals.py
 evals/
 ├── golden.yaml
